@@ -16,3 +16,56 @@ var obj_database = Database()
  
   let str_Sql_Insert = NSString(format: "insert into updateCartItem(product_id,product_name,product_variant,product_image_url,product_sell_price,product_list_price,product_discount,product_qty,product_max_qty,response) values ('%@','%@','%@','%@',%d,%d,%d,%d,%d,'%@')",str_variantId,str_name,str_variant_name,"",Int(str_SalePrice),Int(str_listPrice),Int(str_discout),Int(str_current),Int(maxQty),str_res) as String
   obj_database.insert(str_Sql_Insert)
+
+
+
+
+//// For Decodable 
+
+
+******************* Set Parameters 
+
+struct Course: Decodable {
+    let id: Int
+    let name: String
+    let imageUrl: String
+    let link: String
+    let number_of_lessons: Int
+}
+
+
+******************* API Called Methods 
+
+func fetchApiMethods(strurl: String, completation: @escaping (Result<[Course], Error>) -> ()) {
+
+    guard let url = URL(string: strurl) else { return }
+    URLSession.shared.dataTask(with: url) { (data, res, err) in
+        if let err = err {
+            completation(.failure(err))
+            return
+        }
+        do
+        {
+            let result = try JSONDecoder().decode([Course].self, from: data!)
+            completation(.success(result))
+        }
+        catch let jsonError {
+            completation(.failure(jsonError))
+        }
+        }.resume()
+}
+
+
+***************** Calling Methods 
+
+
+fetchApiMethods(strurl: str_url) { (res) in
+            switch res {
+            case .success(let result):
+                result.forEach({ (resa) in
+                    print(resa)
+                })
+            case .failure(let err):
+                print("Failed to load error", err)
+            }
+        }
