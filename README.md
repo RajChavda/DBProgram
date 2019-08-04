@@ -69,3 +69,70 @@ fetchApiMethods(strurl: str_url) { (res) in
                 print("Failed to load error", err)
             }
         }
+        
+        
+        
+***************** Api Methods 
+
+
+func getApiCalled(_ str_eventName: String!, resolve: @escaping (_ name: AnyObject) -> Void)
+    {
+        let url1 = URL(string: str_eventName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!)
+        guard let url = url1 else {
+            print("Error: cannot create URL")
+            return
+        }
+        let urlRequest = URLRequest(url: url)
+        // set up the session
+        let config = URLSessionConfiguration.default
+        let session = URLSession(configuration: config)
+        let task = session.dataTask(with: urlRequest) { (data, response, error) in
+            if let error = error {
+                print("Api Error: \(error.localizedDescription)")
+                return
+            }
+            guard let data = data, let response = response as? HTTPURLResponse else {
+                print("Api Error: No response from API")
+                return
+            }
+            int_HttpStatusCode = response.statusCode
+            let object: NSDictionary?
+            do {
+
+                object = try JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? NSDictionary
+            } catch {
+                object = nil
+                print("Api Error")
+                return
+            }
+            guard let json = object else {
+                print("Api Parse Error")
+                return
+            }
+            // Perform table updates on UI thread
+            DispatchQueue.main.async {
+                resolve(json)
+            }
+        }
+        task.resume()
+    }
+  
+  
+  func PostApiCalled(_ str_eventName: String, parameter: AnyObject , headers: HTTPHeaders, resolve:@escaping (_ name: AnyObject) -> Void)
+    {
+        let str_url = URL.init(string: str_eventName)
+        Alamofire.request(str_url!, method: .post, parameters: parameter as? Parameters, encoding: JSONEncoding.default, headers: headers).responseJSON { (responseData) -> Void in
+            let httpStatusCode = responseData.response?.statusCode
+            int_HttpStatusCode = httpStatusCode!
+            if responseData.result.value != nil
+            {
+                int_HttpStatusCode = httpStatusCode!
+                resolve(responseData.result.value! as AnyObject)
+            }
+            else
+            {
+                print(responseData)
+                resolve(["errorMessage":str_serverError] as AnyObject)
+            }
+        }
+    }
